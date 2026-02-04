@@ -199,7 +199,11 @@ server <- function(input, output, session) {
   )
   
   output$tabel_perwakilan <- renderReactable({
-    reactable(asn_perwakilan, filterable = TRUE)
+    reactable(asn_perwakilan, filterable = TRUE, 
+              pagination = FALSE,
+             # virtual = TRUE,
+              height = 500,
+              showPagination = T)
   })
   
   #PKB
@@ -240,7 +244,11 @@ server <- function(input, output, session) {
   )
   
   output$tabel_penyuluh <- renderReactable({
-    reactable(asn_penyuluh, filterable = TRUE)
+    reactable(asn_penyuluh, filterable = TRUE, 
+              pagination = F,
+              # virtual = TRUE,
+              height = 500,
+              showPagination = TRUE)
   })
   
 }
