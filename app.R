@@ -191,7 +191,7 @@ server <- function(input, output, session) {
   
   output$download_excel <- downloadHandler(
     filename = function() {
-      paste("data-", Sys.Date(), ".xlsx", sep = "")
+      paste("data-lapor-spt-perwakilan-", Sys.Date(), ".xlsx", sep = "")
     },
     content = function(file) {
       write_xlsx(asn_perwakilan, file)
@@ -239,7 +239,7 @@ server <- function(input, output, session) {
   
   output$download_excel_penyuluh <- downloadHandler(
     filename = function() {
-      paste("data-", Sys.Date(), ".xlsx", sep = "")
+      paste("data-lapor-spt-penyuluh-", Sys.Date(), ".xlsx", sep = "")
     },
     content = function(file) {
       write_xlsx(asn_penyuluh, file)
