@@ -7,6 +7,7 @@ library(waiter)
 library(bslib)
 library(bsicons)
 
+gs4_deauth()
 # Baca dengan spesifikasi tipe kolom
 lapor_spt25 <- read_sheet(
   "https://docs.google.com/spreadsheets/d/1CI6PxR_Su_CdTqnESs5AxzhqNXmOJoe-AOwyvGECvKs/edit?gid=759413326#gid=759413326",

@@ -1,7 +1,7 @@
 
 library(fst)
 library(googlesheets4)
-
+gs4_deauth()
 # Baca dengan spesifikasi tipe kolom
 lapor_spt25 <- read_sheet(
   "https://docs.google.com/spreadsheets/d/1CI6PxR_Su_CdTqnESs5AxzhqNXmOJoe-AOwyvGECvKs/edit?gid=759413326#gid=759413326",
