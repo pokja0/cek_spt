@@ -37,12 +37,9 @@ server <- function(input, output) {
 
     output$distPlot <- renderTable({
 
-      
-      # Baca dengan spesifikasi tipe kolom
-      lapor_spt <- read_sheet(
-        "https://docs.google.com/spreadsheets/d/1CI6PxR_Su_CdTqnESs5AxzhqNXmOJoe-AOwyvGECvKs/edit?gid=759413326#gid=759413326",
-        col_types = "c"  # 'c' berarti character untuk semua kolom, atau sesuaikan
-      )
+      gs4_deauth()
+      url <- "https://docs.google.com/spreadsheets/d/1CI6PxR_Su_CdTqnESs5AxzhqNXmOJoe-AOwyvGECvKs/edit?gid=759413326#gid=759413326"
+      lapor_spt <- read_sheet(url)
       lapor_spt
     })
 }

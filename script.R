@@ -27,3 +27,5 @@ lapor_spt <- read_sheet(
   "https://docs.google.com/spreadsheets/d/1CI6PxR_Su_CdTqnESs5AxzhqNXmOJoe-AOwyvGECvKs/edit?gid=759413326#gid=759413326",
   col_types = "c"  # 'c' berarti character untuk semua kolom, atau sesuaikan
 )
+
+
