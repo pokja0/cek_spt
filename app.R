@@ -1,48 +1,128 @@
-#
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    https://shiny.posit.co/
-#
+library(bs4Dash)
+library(dplyr)
+library(fst)
+library(reactable)
 library(googlesheets4)
-library(shiny)
+library(waiter)
+library(bslib)
+library(bsicons)
 
-# Define UI for application that draws a histogram
-ui <- fluidPage(
-
-    # Application title
-    titlePanel("Old Faithful Geyser Data"),
-
-    # Sidebar with a slider input for number of bins 
-    sidebarLayout(
-        sidebarPanel(
-            sliderInput("bins",
-                        "Number of bins:",
-                        min = 1,
-                        max = 50,
-                        value = 30)
-        ),
-
-        # Show a plot of the generated distribution
-        mainPanel(
-           tableOutput("distPlot")
-        )
-    )
+# Baca dengan spesifikasi tipe kolom
+lapor_spt25 <- read_sheet(
+  "https://docs.google.com/spreadsheets/d/1CI6PxR_Su_CdTqnESs5AxzhqNXmOJoe-AOwyvGECvKs/edit?gid=759413326#gid=759413326",
+  col_types = "c"  # 'c' berarti character untuk semua kolom, atau sesuaikan
 )
 
-# Define server logic required to draw a histogram
-server <- function(input, output) {
+lapor_spt25$NIP <- as.character(lapor_spt25$NIP)
 
-    output$distPlot <- renderTable({
+lapor_spt25 <- lapor_spt25 |>
+  distinct(NIP, .keep_all = TRUE)
 
-      gs4_deauth()
-      url <- "https://docs.google.com/spreadsheets/d/1CI6PxR_Su_CdTqnESs5AxzhqNXmOJoe-AOwyvGECvKs/edit?gid=759413326#gid=759413326"
-      lapor_spt <- read_sheet(url)
-      lapor_spt
-    })
+asn_penyuluh <- fst::read.fst("data/asn_pkb.fst")
+
+asn_penyuluh <- left_join(asn_penyuluh, lapor_spt25, by = c("NIP Baru" = "NIP")) |>
+  mutate(
+    `Status Lapor` = ifelse(is.na(Timestamp), "Belum Melapor", "Sudah Melapor")
+  )# 
+
+asn_perwakilan <- fst::read.fst("data/asn_perwakilan.fst")
+
+asn_perwakilan <- left_join(asn_perwakilan, lapor_spt25, by = c("NIP Baru" = "NIP")) |>
+  mutate(
+    `Status Lapor` = ifelse(is.na(Timestamp), "Belum Melapor", "Sudah Melapor")
+  )
+
+ui <- dashboardPage(
+  preloader = list(html = tagList(spin_1(), "Loading ..."), color = "#343a40"),
+  dashboardHeader(title = "Cek Lapor SPT25"),
+  dashboardSidebar(
+    sidebarMenu(
+      id = "sidebarMenu",
+      menuItem(
+        text = "ASN Perwakilan",
+        tabName = "tab1"
+      ),
+      menuItem(
+        text = "PKB/PLKB",
+        tabName = "tab2"
+      )
+    )
+  ),
+  dashboardBody(
+    tabItems(
+      tabItem(
+        tabName = "tab1",
+        # Boxes need to be put in a row (or column)
+        fluidRow(
+          column(
+            4,
+            value_box( 
+              title = "Jumlah ASN Perwakilan", 
+              "68",
+              showcase = bs_icon("music-note-beamed"),
+              theme = "bg-gradient-indigo-purple" 
+            )
+          ),
+          column(
+            4,
+            value_box( 
+              title = "Telah Melapor", 
+              "$1 Billion Dollars",  
+              showcase = bs_icon("music-note-beamed"),
+              theme = "bg-gradient-indigo-purple" 
+            )
+          ),
+          column(
+            4,
+            value_box( 
+              title = "Belum Melapor", 
+              "$1 Billion Dollars", 
+              showcase = bs_icon("music-note-beamed"),
+              theme = "bg-gradient-indigo-purple" 
+            )
+          )
+        ),
+        fluidRow(
+          column(
+            3,
+            value_box(
+              title = "Sisa Hari Hingga Batas Waktu",
+              value = textOutput("sisa_hari"),
+              showcase = bs_icon("music-note-beamed"),
+              theme = "primary",
+              p("Batas akhir: 28 Februari 2026"),
+              p("Nota Dinas Kepala Perwakilan")
+            )
+          )
+        )
+      ),
+      tabItem(
+        tabName = "tab2",
+        "Welcome TAB2!"
+      )
+    )
+  )
+)
+
+server <- function(input, output, session) {
+  observeEvent(input$reload, {
+    session$reload()
+  })
+  
+  output$sisa_hari <- renderText({
+    batas_waktu <- as.Date("2026-02-28")
+    hari_ini <- Sys.Date()
+    sisa <- as.numeric(batas_waktu - hari_ini)
+    
+    if(sisa > 0) {
+      paste0(sisa, " hari lagi")
+    } else if(sisa == 0) {
+      "HARI INI BATAS WAKTU!"
+    } else {
+      paste0("Terlambat ", abs(sisa), " hari!")
+    }
+  })
+  
 }
 
-# Run the application 
-shinyApp(ui = ui, server = server)
+shinyApp(ui, server)
