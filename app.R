@@ -203,7 +203,10 @@ server <- function(input, output, session) {
               pagination = FALSE,
              # virtual = TRUE,
               height = 500,
-              showPagination = T)
+              showPagination = T,
+             rowStyle = function(index) {
+               if (asn_perwakilan[index, "Status Lapor"] == "Belum Melapor") list(background = "rgb(255, 153, 153)")
+             })
   })
   
   #PKB
@@ -244,11 +247,15 @@ server <- function(input, output, session) {
   )
   
   output$tabel_penyuluh <- renderReactable({
-    reactable(asn_penyuluh, filterable = TRUE, 
+    reactable(asn_penyuluh |>
+                arrange(KABUPATEN), filterable = TRUE, 
               pagination = F,
               # virtual = TRUE,
               height = 500,
-              showPagination = TRUE)
+              showPagination = TRUE,
+              rowStyle = function(index) {
+                 if (asn_penyuluh[index, "Status Lapor"] == "Belum Melapor") list(background = "rgb(255, 153, 153)")
+              })
   })
   
 }
