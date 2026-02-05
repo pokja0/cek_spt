@@ -29,6 +29,8 @@ ui <- dashboardPage(
       tabItem(
         tabName = "tab1",
         # Boxes need to be put in a row (or column)
+        h2("Status Pengiriman Bukti Dukung SPT25 - ASN Perwakilan", style="text-align: center;"),
+        br(),
         fluidRow(
           column(
             3,
@@ -43,7 +45,7 @@ ui <- dashboardPage(
           column(
             3,
             value_box( 
-              title = "Telah Melapor", 
+              title = "Sudah Mengirim", 
               textOutput("perwakilan_sudah"),  
               showcase = bs_icon("emoji-heart-eyes-fill"),
               theme = "bg-gradient-indigo-purple" 
@@ -52,7 +54,7 @@ ui <- dashboardPage(
           column(
             3,
             value_box( 
-              title = "Belum Melapor", 
+              title = "Belum Mengirim", 
               textOutput("perwakilan_belum"),  
               showcase = bs_icon("emoji-tear-fill"),
               theme = "bg-gradient-indigo-purple" 
@@ -77,6 +79,8 @@ ui <- dashboardPage(
       ),
       tabItem(
         tabName = "tab2",
+        h2("Status Pengiriman Bukti Dukung SPT25 - PKB/PLKB", style="text-align: center;"),
+        br(),
         fluidRow(
           column(
             3,
@@ -91,7 +95,7 @@ ui <- dashboardPage(
           column(
             3,
             value_box( 
-              title = "Telah Melapor", 
+              title = "Sudah Mengirim", 
               textOutput("pkb_sudah"),  
               showcase = bs_icon("emoji-heart-eyes"),
               theme = "bg-gradient-indigo-purple" ,
@@ -101,7 +105,7 @@ ui <- dashboardPage(
           column(
             3,
             value_box( 
-              title = "Belum Melapor", 
+              title = "Belum Mengirim", 
               textOutput("pkb_belum"),  
               showcase = bs_icon("emoji-tear"),
               theme = "bg-gradient-indigo-purple" 
@@ -151,10 +155,10 @@ server <- function(input, output, session) {
     
     asn_penyuluh <- left_join(asn_penyuluh, lapor_spt25(), by = c("NIP Baru" = "NIP")) |>
       mutate(
-        `Status Lapor` = ifelse(is.na(Timestamp), "Belum Melapor", "Sudah Melapor"),
+        `Bukti Dukung` = ifelse(is.na(Timestamp), "Belum Mengirim", "Sudah Mengirim"),
         No = as.character(1:nrow(asn_penyuluh))
       ) |>
-      select(No, KABUPATEN, `NIP Baru`, `Nama Lengkap`, `Jenis Pegawai`, `Status Lapor`)
+      select(No, KABUPATEN, `NIP Baru`, `Nama Lengkap`, `Jenis Pegawai`, `Bukti Dukung`)
   })
   
   asn_perwakilan <- reactive({
@@ -162,10 +166,10 @@ server <- function(input, output, session) {
     
     asn_perwakilan <- left_join(asn_perwakilan, lapor_spt25(), by = c("NIP Baru" = "NIP")) |>
       mutate(
-        `Status Lapor` = ifelse(is.na(Timestamp), "Belum Melapor", "Sudah Melapor"),
+        `Bukti Dukung` = ifelse(is.na(Timestamp), "Belum Mengirim", "Sudah Mengirim"),
         No = as.character(1:nrow(asn_perwakilan))
       ) |>
-      select(No, `NIP Baru`, `Nama Lengkap`, `Jenis Pegawai`, `Status Lapor`)
+      select(No, `NIP Baru`, `Nama Lengkap`, `Jenis Pegawai`, `Bukti Dukung`)
   })
   
   
@@ -189,19 +193,19 @@ server <- function(input, output, session) {
   
   status_lapor_perwakilan <- reactive({
     status_lapor_perwakilan <- asn_perwakilan() |>
-      count(`Status Lapor`)
+      count(`Bukti Dukung`)
   })
   
  
   
   output$perwakilan_sudah <- renderText({
     status_lapor_perwakilan = status_lapor_perwakilan()
-    status_lapor_perwakilan$n[status_lapor_perwakilan$`Status Lapor` == "Sudah Melapor"]
+    status_lapor_perwakilan$n[status_lapor_perwakilan$`Bukti Dukung` == "Sudah Mengirim"]
   })
   
   output$perwakilan_belum <- renderText({
     status_lapor_perwakilan = status_lapor_perwakilan()
-    status_lapor_perwakilan$n[status_lapor_perwakilan$`Status Lapor` == "Belum Melapor"]
+    status_lapor_perwakilan$n[status_lapor_perwakilan$`Bukti Dukung` == "Belum Mengirim"]
   })
   
   output$download_excel <- downloadHandler(
@@ -221,7 +225,7 @@ server <- function(input, output, session) {
               height = 500,
               showPagination = T,
              rowStyle = function(index) {
-               if (asn_perwakilan[index, "Status Lapor"] == "Belum Melapor") list(background = "rgb(255, 153, 153)")
+               if (asn_perwakilan[index, "Bukti Dukung"] == "Belum Mengirim") list(background = "rgb(255, 153, 153)")
              })
   })
   
@@ -243,19 +247,19 @@ server <- function(input, output, session) {
   
   status_lapor_penyuluh <- reactive({
     status_lapor_penyuluh <- asn_penyuluh() |>
-      count(`Status Lapor`)
+      count(`Bukti Dukung`)
   })
 
   
   
   output$pkb_sudah <- renderText({
     status_lapor_penyuluh = status_lapor_penyuluh()
-    status_lapor_penyuluh$n[status_lapor_penyuluh$`Status Lapor` == "Sudah Melapor"]
+    status_lapor_penyuluh$n[status_lapor_penyuluh$`Bukti Dukung` == "Sudah Mengirim"]
   })
   
   output$pkb_belum <- renderText({
     status_lapor_penyuluh = status_lapor_penyuluh()
-    status_lapor_penyuluh$n[status_lapor_penyuluh$`Status Lapor` == "Belum Melapor"]
+    status_lapor_penyuluh$n[status_lapor_penyuluh$`Bukti Dukung` == "Belum Mengirim"]
   })
   
   output$download_excel_penyuluh <- downloadHandler(
@@ -277,7 +281,7 @@ server <- function(input, output, session) {
               height = 500,
               showPagination = TRUE,
               rowStyle = function(index) {
-                 if (asn_penyuluh[index, "Status Lapor"] == "Belum Melapor") list(background = "rgb(255, 153, 153)")
+                 if (asn_penyuluh[index, "Bukti Dukung"] == "Belum Mengirim") list(background = "rgb(255, 153, 153)")
               })
   })
   
