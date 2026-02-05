@@ -13,6 +13,13 @@ lapor_spt25$NIP <- as.character(lapor_spt25$NIP)
 lapor_spt25 <- lapor_spt25 |>
   distinct(NIP, .keep_all = TRUE)
 
+pkb_wilker <- read.csv2("data/nama pkb.csv")
+pkb_wilker <- pkb_wilker |>
+  distinct(KABUPATEN, KECAMATAN, NAMA.PKB)
+pkb_nip <- readxl::read_excel("data/DaftarPegawai_30012026.xlsx", 2)
+
+asn_penyuluh <- left_join(pkb_nip, pkb_wilker, by = c("Nama Lengkap" = "NAMA.PKB"))
+
 asn_penyuluh <- fst::read.fst("data/asn_pkb.fst")
 
 asn_penyuluh <- left_join(asn_penyuluh, lapor_spt25, by = c("NIP Baru" = "NIP")) |>

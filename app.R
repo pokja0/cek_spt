@@ -8,36 +8,6 @@ library(bslib)
 library(bsicons)
 library(writexl) 
 
-gs4_deauth()
-# Baca dengan spesifikasi tipe kolom
-lapor_spt25 <- read_sheet(
-  "https://docs.google.com/spreadsheets/d/1CI6PxR_Su_CdTqnESs5AxzhqNXmOJoe-AOwyvGECvKs/edit?gid=759413326#gid=759413326",
-  col_types = "c"  # 'c' berarti character untuk semua kolom, atau sesuaikan
-)
-
-lapor_spt25$NIP <- as.character(lapor_spt25$NIP)
-
-lapor_spt25 <- lapor_spt25 |>
-  distinct(NIP, .keep_all = TRUE)
-
-asn_penyuluh <- fst::read.fst("data/asn_pkb.fst")
-
-asn_penyuluh <- left_join(asn_penyuluh, lapor_spt25, by = c("NIP Baru" = "NIP")) |>
-  mutate(
-    `Status Lapor` = ifelse(is.na(Timestamp), "Belum Melapor", "Sudah Melapor"),
-    No = as.character(1:nrow(asn_penyuluh))
-  ) |>
-  select(No, KABUPATEN, `NIP Baru`, `Nama Lengkap`, `Jenis Pegawai`, `Status Lapor`)
-
-asn_perwakilan <- fst::read.fst("data/asn_perwakilan.fst")
-
-asn_perwakilan <- left_join(asn_perwakilan, lapor_spt25, by = c("NIP Baru" = "NIP")) |>
-  mutate(
-    `Status Lapor` = ifelse(is.na(Timestamp), "Belum Melapor", "Sudah Melapor"),
-    No = as.character(1:nrow(asn_perwakilan))
-  ) |>
-  select(No, `NIP Baru`, `Nama Lengkap`, `Jenis Pegawai`, `Status Lapor`)
-
 ui <- dashboardPage(
   preloader = list(html = tagList(spin_1(), "Loading ..."), color = "#343a40"),
   dashboardHeader(title = "Cek Lapor SPT25"),
@@ -159,6 +129,46 @@ ui <- dashboardPage(
 )
 
 server <- function(input, output, session) {
+  
+  lapor_spt25 <- reactive({
+    gs4_deauth()
+    # Baca dengan spesifikasi tipe kolom
+    lapor_spt <- read_sheet(
+      "https://docs.google.com/spreadsheets/d/1CI6PxR_Su_CdTqnESs5AxzhqNXmOJoe-AOwyvGECvKs/edit?gid=759413326#gid=759413326",
+      col_types = "c"  # 'c' berarti character untuk semua kolom, atau sesuaikan
+    ) 
+    
+    lapor_spt$NIP <- as.character(lapor_spt$NIP)
+    
+    lapor_spt <- lapor_spt |>
+      distinct(NIP, .keep_all = TRUE)
+    
+    return(lapor_spt)
+  })
+  
+  asn_penyuluh <- reactive({
+    asn_penyuluh <- fst::read.fst("data/asn_pkb.fst")
+    
+    asn_penyuluh <- left_join(asn_penyuluh, lapor_spt25(), by = c("NIP Baru" = "NIP")) |>
+      mutate(
+        `Status Lapor` = ifelse(is.na(Timestamp), "Belum Melapor", "Sudah Melapor"),
+        No = as.character(1:nrow(asn_penyuluh))
+      ) |>
+      select(No, KABUPATEN, `NIP Baru`, `Nama Lengkap`, `Jenis Pegawai`, `Status Lapor`)
+  })
+  
+  asn_perwakilan <- reactive({
+    asn_perwakilan <- fst::read.fst("data/asn_perwakilan.fst")
+    
+    asn_perwakilan <- left_join(asn_perwakilan, lapor_spt25(), by = c("NIP Baru" = "NIP")) |>
+      mutate(
+        `Status Lapor` = ifelse(is.na(Timestamp), "Belum Melapor", "Sudah Melapor"),
+        No = as.character(1:nrow(asn_perwakilan))
+      ) |>
+      select(No, `NIP Baru`, `Nama Lengkap`, `Jenis Pegawai`, `Status Lapor`)
+  })
+  
+  
   observeEvent(input$reload, {
     session$reload()
   })
@@ -177,15 +187,20 @@ server <- function(input, output, session) {
     }
   })
   
-  status_lapor_perwakilan <- asn_perwakilan |>
-    count(`Status Lapor`)
+  status_lapor_perwakilan <- reactive({
+    status_lapor_perwakilan <- asn_perwakilan() |>
+      count(`Status Lapor`)
+  })
+  
  
   
   output$perwakilan_sudah <- renderText({
+    status_lapor_perwakilan = status_lapor_perwakilan()
     status_lapor_perwakilan$n[status_lapor_perwakilan$`Status Lapor` == "Sudah Melapor"]
   })
   
   output$perwakilan_belum <- renderText({
+    status_lapor_perwakilan = status_lapor_perwakilan()
     status_lapor_perwakilan$n[status_lapor_perwakilan$`Status Lapor` == "Belum Melapor"]
   })
   
@@ -194,12 +209,13 @@ server <- function(input, output, session) {
       paste("data-lapor-spt-perwakilan-", Sys.Date(), ".xlsx", sep = "")
     },
     content = function(file) {
-      write_xlsx(asn_perwakilan, file)
+      write_xlsx(asn_perwakilan(), file)
     }
   )
   
   output$tabel_perwakilan <- renderReactable({
-    reactable(asn_perwakilan, filterable = TRUE, 
+    asn_perwakilan = asn_perwakilan()
+    reactable(asn_perwakilan(), filterable = TRUE, 
               pagination = FALSE,
              # virtual = TRUE,
               height = 500,
@@ -225,15 +241,20 @@ server <- function(input, output, session) {
     }
   })
   
-  status_lapor_penyuluh <- asn_penyuluh |>
-    count(`Status Lapor`)
+  status_lapor_penyuluh <- reactive({
+    status_lapor_penyuluh <- asn_penyuluh() |>
+      count(`Status Lapor`)
+  })
+
   
   
   output$pkb_sudah <- renderText({
+    status_lapor_penyuluh = status_lapor_penyuluh()
     status_lapor_penyuluh$n[status_lapor_penyuluh$`Status Lapor` == "Sudah Melapor"]
   })
   
   output$pkb_belum <- renderText({
+    status_lapor_penyuluh = status_lapor_penyuluh()
     status_lapor_penyuluh$n[status_lapor_penyuluh$`Status Lapor` == "Belum Melapor"]
   })
   
@@ -242,13 +263,15 @@ server <- function(input, output, session) {
       paste("data-lapor-spt-penyuluh-", Sys.Date(), ".xlsx", sep = "")
     },
     content = function(file) {
-      write_xlsx(asn_penyuluh, file)
+      write_xlsx(asn_penyuluh(), file)
     }
   )
   
   output$tabel_penyuluh <- renderReactable({
-    reactable(asn_penyuluh |>
-                arrange(KABUPATEN), filterable = TRUE, 
+    asn_penyuluh = asn_penyuluh()
+    asn_penyuluh <- asn_penyuluh |>
+      arrange(KABUPATEN)
+    reactable(asn_penyuluh, filterable = TRUE, 
               pagination = F,
               # virtual = TRUE,
               height = 500,
